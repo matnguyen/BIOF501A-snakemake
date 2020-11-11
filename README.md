@@ -1,1 +1,8 @@
-# BIOF501A-snakemake
+# Standard Operating Procedure
+## Background and Rationale
+
+## Usage
+
+## Input
+
+## Output
