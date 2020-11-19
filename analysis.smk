@@ -34,7 +34,7 @@ rule obtain_isolate_ids:
         'grep BCCDC {input.spike_fasta} | cut -f 2 -d "|" | '
         'cut -f 3 -d "/" | sort >> {output.spike_txt}; '
         'grep BC_ {input.genome_fasta} | cut -f 3 -d "/" | '
-        'sort >> {output.spike_txt}' 
+        'sort >> {output.genome_txt}' 
 
 # Obtain list of BC isolates with both spike protein sequence and 
 # genome sequence
@@ -99,8 +99,8 @@ rule rename_fasta_headers:
         genome_fasta = 'bc_msa_fixed.fasta',
         spike_fasta = 'bc_spikeprot_fixed.fasta'
     shell:
-        'sed -i \'s/.*\(BC.*\/2020\).*/>\1/\' {input.genome_fasta}; '
-        'sed -i \'s/.*\(BC.*\/2020\).*/>\1/\' {input.spike_fasta}'
+        'sed "s/.*\(BC.*\/2020\).*/>\\1/" {input.genome_fasta} >> {output.genome_fasta}; '
+        'sed "s/.*\(BC.*\/2020\).*/>\\1/" {input.spike_fasta} >> {output.spike_fasta}'
 
 # Runs RAxML for the spike protein alignment file to produce a 
 # phylogenetic tree
@@ -119,7 +119,7 @@ rule run_raxml_spike:
         model = 'bc_spikeprot.raxml.bestModel'
     shell:
         'raxml-ng --msa {input.fasta} --msa-format FASTA --model LG+G '
-        '--prefix bc_spikeprot --threads 4'
+        '--prefix bc_spikeprot --threads 4 --seed 667'
 
 # Runs RAxML for the genome alignment file to produce a 
 # phylogenetic tree
@@ -138,7 +138,7 @@ rule run_raxml_genome:
         model = 'bc_msa.raxml.bestModel'
     shell:
         'raxml-ng --msa {input.fasta} --msa-format FASTA --model GTR+G '
-        '--prefix bc_msa --threads 4'
+        '--prefix bc_msa --threads 4 --seed 667'
 
 # Visualize the RAxML trees using ETE
 # Output:
