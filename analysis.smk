@@ -1,7 +1,7 @@
 rule all:
     input:
-        'bc_msa_tree.png',
-        'bc_spikeprot_tree.png'
+        'bc_msa_tree.pdf',
+        'bc_spikeprot_tree.pdf'
 
 # Decompress the dataset to obtain a multiple sequence alignment of genomes (fasta)
 # and a fasta of unaligned spike protein sequences
@@ -94,7 +94,7 @@ rule run_mafft_spike:
 rule rename_fasta_headers:
     input:
         genome_fasta = 'bc_msa.fasta',
-        spike_fasta = 'bc_spikeprot.fasta'
+        spike_fasta = 'bc_spikeprot_aligned.fasta'
     output:
         genome_fasta = 'bc_msa_fixed.fasta',
         spike_fasta = 'bc_spikeprot_fixed.fasta'
@@ -148,8 +148,8 @@ rule visualize_trees:
         genome_tree = 'bc_msa.raxml.bestTree',
         spike_tree = 'bc_spikeprot.raxml.bestTree'
     output:
-        genome_png = 'bc_msa_tree.png',
-        spike_png = 'bc_spikeprot_tree.png'
+        genome_png = 'bc_msa_tree.pdf',
+        spike_png = 'bc_spikeprot_tree.pdf'
     shell:
         'ete3 view -i {output.genome_png} -t {input.genome_tree} -m c; '
         'ete3 view -i {output.spike_png} -t {input.spike_tree} -m c'
