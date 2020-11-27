@@ -1,7 +1,8 @@
 rule all:
     input:
         'vn_msa_tree.png',
-        'vn_spikeprot_tree.png'
+        'vn_spikeprot_tree.png',
+        'vn_trees_comparison.txt'
 
 # Decompress the dataset to obtain a multiple sequence alignment of genomes (fasta)
 # and a fasta of unaligned spike protein sequences
@@ -152,3 +153,16 @@ rule visualize_trees:
     shell:
         'ete3 view -i {output.genome_png} -t {input.genome_tree} -m c; '
         'ete3 view -i {output.spike_png} -t {input.spike_tree} -m c'
+
+# Compare the two phylogenetic trees quantitatively
+# Output:
+#   - text file with metrics for comparison
+rule compare_trees:
+    input:
+        genome_tree = 'vn_msa.raxml.bestTree',
+        spike_tree = 'vn_spikeprot.raxml.bestTree'
+    output:
+        txt = 'vn_trees_comparison.txt'
+    shell:
+        'ete3 compare -t {input.spike_tree} -r {input.genome_tree} --unrooted | '
+        'cut -f 3-10 -d "|" >> {output.txt}'
