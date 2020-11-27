@@ -1,7 +1,7 @@
 rule all:
     input:
-        'vn_msa_tree.pdf',
-        'vn_spikeprot_tree.pdf'
+        'vn_msa_tree.png',
+        'vn_spikeprot_tree.png'
 
 # Decompress the dataset to obtain a multiple sequence alignment of genomes (fasta)
 # and a fasta of unaligned spike protein sequences
@@ -147,8 +147,8 @@ rule visualize_trees:
         genome_tree = 'vn_msa.raxml.bestTree',
         spike_tree = 'vn_spikeprot.raxml.bestTree'
     output:
-        genome_png = 'vn_msa_tree.pdf',
-        spike_png = 'vn_spikeprot_tree.pdf'
+        genome_png = 'vn_msa_tree.png',
+        spike_png = 'vn_spikeprot_tree.png'
     shell:
         'ete3 view -i {output.genome_png} -t {input.genome_tree} -m c; '
         'ete3 view -i {output.spike_png} -t {input.spike_tree} -m c'
