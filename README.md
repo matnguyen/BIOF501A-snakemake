@@ -25,7 +25,7 @@ First, clone this repository by running:
 
 Then create a Conda environment named `sop` using the included `env.yml` file:
 
-`conda create -f env.yml`
+`conda env create -f env.yml`
 
 This will install all the required dependencies. Activate the environment by running:
 
