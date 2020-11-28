@@ -105,7 +105,7 @@ rule run_mafft_spike:
 rule rename_fasta_headers:
     input:
         genome_fasta = expand(join(OUTDIR_INTER, '{prefix}_msa.fasta'), prefix=PREFIX),
-        spike_fasta = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.fasta'), prefix=PREFIX)
+        spike_fasta = expand(join(OUTDIR_INTER, '{prefix}_spikeprot_aligned.fasta'), prefix=PREFIX)
     output:
         genome_fasta = expand(join(OUTDIR_INTER, '{prefix}_msa_fixed.fasta'), prefix=PREFIX),
         spike_fasta = expand(join(OUTDIR_INTER, '{prefix}_spikeprot_fixed.fasta'), prefix=PREFIX)
