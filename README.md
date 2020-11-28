@@ -11,7 +11,7 @@ The following dependencies are required, and defined in the environment YAML fil
 * ETE 3 (version 3.1.2)
 
 ### Directed Acyclic Graph for Workflow
-
+![](images/dag.svg) 
 
 
 ## Usage
