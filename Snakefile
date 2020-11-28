@@ -22,11 +22,11 @@ rule all:
 #   - decompressed unaligned spike protein fasta
 rule decompress_data:
     input:
-        genome = 'msa_1119.tar.xz',
-        spike = 'spikeprot1119.fasta.xz'
+        genome = 'data/msa_1119.tar.xz',
+        spike = 'data/spikeprot1119.fasta.xz'
     output:
-        spike_fasta = 'spikeprot1119.fasta',
-        genome_fasta = 'msa_1119.fasta'
+        spike_fasta = 'data/spikeprot1119.fasta',
+        genome_fasta = 'data/msa_1119.fasta'
     shell:
         'tar -xf {input.genome}; unxz {input.spike}'
 
@@ -37,8 +37,8 @@ rule decompress_data:
 #   - text file of list of Vietnam isolates with spike protein sequences
 rule obtain_isolate_ids:
     input: 
-        genome_fasta = 'msa_1119.fasta',
-        spike_fasta = 'spikeprot1119.fasta'
+        genome_fasta = 'data/msa_1119.fasta',
+        spike_fasta = 'data/spikeprot1119.fasta'
     output:
         genome_txt = expand(join(OUTDIR_INTER, '{prefix}_genome_ids.txt'), prefix=PREFIX),
         spike_txt = expand(join(OUTDIR_INTER, '{prefix}_spike_ids.txt'), prefix=PREFIX)
@@ -66,7 +66,7 @@ rule obtain_paired_ids:
 #   - fasta of only Vietnam spike protein sequences
 rule preprocess_spike_fasta:
     input:
-        fasta = 'spikeprot1119.fasta',
+        fasta = 'data/spikeprot1119.fasta',
         ids = expand(join(OUTDIR_INTER, '{prefix}_paired_ids.txt'), prefix=PREFIX)
     output:
         fasta = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.fasta'), prefix=PREFIX)
@@ -80,7 +80,7 @@ rule preprocess_spike_fasta:
 #   - fasta of only aligned Vietnam genome sequences
 rule preprocess_genome_msa:
     input: 
-        fasta = 'msa_1119.fasta',
+        fasta = 'data/msa_1119.fasta',
         ids = expand(join(OUTDIR_INTER, '{prefix}_paired_ids.txt'), prefix=PREFIX)
     output:
         fasta = expand(join(OUTDIR_INTER, '{prefix}_msa.fasta'), prefix=PREFIX)
@@ -97,7 +97,7 @@ rule run_mafft_spike:
     output:
         fasta = expand(join(OUTDIR_INTER, '{prefix}_spikeprot_aligned.fasta'), prefix=PREFIX)
     shell:
-        'mafft {input.fasta} >> {output.fasta}'
+        'mafft-linsi {input.fasta} >> {output.fasta}'
 
 # Trims the fasta headers so they are compatible with RAxML
 # Output:
@@ -127,10 +127,11 @@ rule run_raxml_spike:
         bestTree = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.raxml.bestTree'), prefix=PREFIX),
         bestTree_collapse = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.raxml.bestTreeCollapsed'), prefix=PREFIX),
         trees = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.raxml.mlTrees'), prefix=PREFIX),
-        model = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.raxml.bestModel'), prefix=PREFIX)
+        model = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.raxml.bestModel'), prefix=PREFIX),
+        support = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.raxml.support'), prefix=PREFIX)
     shell:
-        'raxml-ng --msa {input.fasta} --msa-format FASTA --model LG+G '
-        '--prefix {OUTDIR_INTER}/{PREFIX}_spikeprot --threads {THREADS} --seed 667'
+        'raxml-ng --all --msa {input.fasta} --msa-format FASTA --model LG+G --tree pars{{25}},rand{{25}} '
+        '--bs-trees 200 --prefix {OUTDIR_INTER}/{PREFIX}_spikeprot --threads {THREADS} --seed 667'
 
 # Runs RAxML for the genome alignment file to produce a 
 # phylogenetic tree
@@ -146,10 +147,11 @@ rule run_raxml_genome:
         bestTree = expand(join(OUTDIR_INTER, '{prefix}_msa.raxml.bestTree'), prefix=PREFIX),
         bestTree_collapse = expand(join(OUTDIR_INTER, '{prefix}_msa.raxml.bestTreeCollapsed'), prefix=PREFIX),
         trees = expand(join(OUTDIR_INTER, '{prefix}_msa.raxml.mlTrees'), prefix=PREFIX),
-        model = expand(join(OUTDIR_INTER, '{prefix}_msa.raxml.bestModel'), prefix=PREFIX)
+        model = expand(join(OUTDIR_INTER, '{prefix}_msa.raxml.bestModel'), prefix=PREFIX),
+        support = expand(join(OUTDIR_INTER, '{prefix}_msa.raxml.support'), prefix=PREFIX)
     shell:
-        'raxml-ng --msa {input.fasta} --msa-format FASTA --model GTR+G '
-        '--prefix {OUTDIR_INTER}/{PREFIX}_msa --threads {THREADS} --seed 667'
+        'raxml-ng --all --msa {input.fasta} --msa-format FASTA --model GTR+G --tree pars{{25}},rand{{25}} '
+        '--bs-trees 200 --prefix {OUTDIR_INTER}/{PREFIX}_msa --threads {THREADS} --seed 667'
 
 # Visualize the RAxML trees using ETE
 # Output:
