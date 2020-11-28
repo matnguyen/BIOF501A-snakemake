@@ -1,0 +1,12 @@
+filter:
+  # Country to filter samples for
+  country: Vietnam
+  # Prefix for output files
+  prefix: vn
+
+output:
+  # Relative path to where the snakefile is launched from
+  dir: 'outputs'
+
+resources:
+  threads: 4

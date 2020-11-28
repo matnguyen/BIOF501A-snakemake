@@ -1,8 +1,19 @@
+from os.path import join
+from os import getcwd
+
+configfile: 'config.yaml'
+
+COUNTRY = config['filter']['country']
+PREFIX = config['filter']['prefix']
+OUTDIR_INTER = join(getcwd(), config['output']['dir'], 'intermediate_files')
+OUTDIR = join(getcwd(), config['output']['dir'])
+THREADS = config['resources']['threads']
+
 rule all:
     input:
-        'vn_msa_tree.png',
-        'vn_spikeprot_tree.png',
-        'vn_trees_comparison.txt'
+     expand(join(OUTDIR, '{prefix}_msa_tree.png'), prefix=PREFIX),
+     expand(join(OUTDIR, '{prefix}_spikeprot_tree.png'), prefix=PREFIX),
+     expand(join(OUTDIR, '{prefix}_trees_comparison.txt'), prefix=PREFIX)
 
 # Decompress the dataset to obtain a multiple sequence alignment of genomes (fasta)
 # and a fasta of unaligned spike protein sequences
@@ -29,11 +40,11 @@ rule obtain_isolate_ids:
         genome_fasta = 'msa_1119.fasta',
         spike_fasta = 'spikeprot1119.fasta'
     output:
-        genome_txt = 'vn_genome_ids.txt',
-        spike_txt = 'vn_spike_ids.txt'
+        genome_txt = expand(join(OUTDIR_INTER, '{prefix}_genome_ids.txt'), prefix=PREFIX),
+        spike_txt = expand(join(OUTDIR_INTER, '{prefix}_spike_ids.txt'), prefix=PREFIX)
     shell:
-        'grep Vietnam {input.spike_fasta} | cut -f 2 -d "|" | sort >> {output.spike_txt}; '
-        'grep Vietnam {input.genome_fasta} | cut -f 1 -d "|" | sed "s/>//"  | '
+        'grep {COUNTRY} {input.spike_fasta} | cut -f 2 -d "|" | sort >> {output.spike_txt}; '
+        'grep {COUNTRY} {input.genome_fasta} | cut -f 1 -d "|" | sed "s/>//"  | '
         'sort >> {output.genome_txt}' 
 
 # Obtain list of Vietnam isolates with both spike protein sequence and 
@@ -42,10 +53,10 @@ rule obtain_isolate_ids:
 #   - text file of Vietnam isolates with paired protein and genome sequences
 rule obtain_paired_ids:
     input:
-        genome_txt = 'vn_genome_ids.txt',
-        spike_txt = 'vn_spike_ids.txt'
+        genome_txt = expand(join(OUTDIR_INTER, '{prefix}_genome_ids.txt'), prefix=PREFIX),
+        spike_txt = expand(join(OUTDIR_INTER, '{prefix}_spike_ids.txt'), prefix=PREFIX)
     output:
-        ids = 'vn_paired_ids.txt'
+        ids = expand(join(OUTDIR_INTER, '{prefix}_paired_ids.txt'), prefix=PREFIX)
     shell:
         'comm -12 {input.genome_txt} {input.spike_txt} >> {output.ids}'
 
@@ -56,9 +67,9 @@ rule obtain_paired_ids:
 rule preprocess_spike_fasta:
     input:
         fasta = 'spikeprot1119.fasta',
-        ids = 'vn_paired_ids.txt'
+        ids = expand(join(OUTDIR_INTER, '{prefix}_paired_ids.txt'), prefix=PREFIX)
     output:
-        fasta = 'vn_spikeprot.fasta',
+        fasta = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.fasta'), prefix=PREFIX)
     shell:
         'while read p; do grep -A1 -m 1 $p {input.fasta} >> {output.fasta}; '
         'done < {input.ids}'      
@@ -70,9 +81,9 @@ rule preprocess_spike_fasta:
 rule preprocess_genome_msa:
     input: 
         fasta = 'msa_1119.fasta',
-        ids = 'vn_paired_ids.txt'
+        ids = expand(join(OUTDIR_INTER, '{prefix}_paired_ids.txt'), prefix=PREFIX)
     output:
-        fasta = 'vn_msa.fasta'
+        fasta = expand(join(OUTDIR_INTER, '{prefix}_msa.fasta'), prefix=PREFIX)
     shell:
         'while read p; do grep -A1 -m 1 $p {input.fasta} >> {output.fasta}; '
         'done < {input.ids}'
@@ -82,9 +93,9 @@ rule preprocess_genome_msa:
 #   - fasta of multiple sequence alignment of spike protein sequences of Vietnam isolates
 rule run_mafft_spike:
     input:
-        fasta = 'vn_spikeprot.fasta'
+        fasta = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.fasta'), prefix=PREFIX)
     output:
-        fasta = 'vn_spikeprot_aligned.fasta'
+        fasta = expand(join(OUTDIR_INTER, '{prefix}_spikeprot_aligned.fasta'), prefix=PREFIX)
     shell:
         'mafft {input.fasta} >> {output.fasta}'
 
@@ -93,14 +104,14 @@ rule run_mafft_spike:
 #   - fasta files with corrected headers
 rule rename_fasta_headers:
     input:
-        genome_fasta = 'vn_msa.fasta',
-        spike_fasta = 'vn_spikeprot_aligned.fasta'
+        genome_fasta = expand(join(OUTDIR_INTER, '{prefix}_msa.fasta'), prefix=PREFIX),
+        spike_fasta = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.fasta'), prefix=PREFIX)
     output:
-        genome_fasta = 'vn_msa_fixed.fasta',
-        spike_fasta = 'vn_spikeprot_fixed.fasta'
+        genome_fasta = expand(join(OUTDIR_INTER, '{prefix}_msa_fixed.fasta'), prefix=PREFIX),
+        spike_fasta = expand(join(OUTDIR_INTER, '{prefix}_spikeprot_fixed.fasta'), prefix=PREFIX)
     shell:
-        'sed "s/.*Vietnam\/\(.*\)\/2020.*/>\\1/" {input.genome_fasta} >> {output.genome_fasta}; '
-        'sed "s/.*Vietnam\/\(.*\)\/2020.*/>\\1/" {input.spike_fasta} >> {output.spike_fasta}'
+        'sed "s/.*{COUNTRY}\/\(.*\)\/2020.*/>\\1/" {input.genome_fasta} >> {output.genome_fasta}; '
+        'sed "s/.*{COUNTRY}\/\(.*\)\/2020.*/>\\1/" {input.spike_fasta} >> {output.spike_fasta}'
 
 # Runs RAxML for the spike protein alignment file to produce a 
 # phylogenetic tree
@@ -111,15 +122,15 @@ rule rename_fasta_headers:
 #   - Optimized model parameters for best-scoring ML tree
 rule run_raxml_spike:
     input:
-        fasta = 'vn_spikeprot_fixed.fasta'
+        fasta = expand(join(OUTDIR_INTER, '{prefix}_spikeprot_fixed.fasta'), prefix=PREFIX)
     output:
-        bestTree = 'vn_spikeprot.raxml.bestTree',
-        bestTree_collapse = 'vn_spikeprot.raxml.bestTreeCollapsed',
-        trees = 'vn_spikeprot.raxml.mlTrees',
-        model = 'vn_spikeprot.raxml.bestModel'
+        bestTree = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.raxml.bestTree'), prefix=PREFIX),
+        bestTree_collapse = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.raxml.bestTreeCollapsed'), prefix=PREFIX),
+        trees = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.raxml.mlTrees'), prefix=PREFIX),
+        model = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.raxml.bestModel'), prefix=PREFIX)
     shell:
         'raxml-ng --msa {input.fasta} --msa-format FASTA --model LG+G '
-        '--prefix vn_spikeprot --threads 4 --seed 667'
+        '--prefix {OUTDIR_INTER}/{PREFIX}_spikeprot --threads {THREADS} --seed 667'
 
 # Runs RAxML for the genome alignment file to produce a 
 # phylogenetic tree
@@ -130,26 +141,26 @@ rule run_raxml_spike:
 #   - Optimized model parameters for best-scoring ML tree
 rule run_raxml_genome:
     input:
-        fasta = 'vn_msa_fixed.fasta'
+        fasta = join(OUTDIR_INTER, 'vn_msa_fixed.fasta')
     output:
-        bestTree = 'vn_msa.raxml.bestTree',
-        bestTree_collapse = 'vn_msa.raxml.bestTreeCollapsed',
-        trees = 'vn_msa.raxml.mlTrees',
-        model = 'vn_msa.raxml.bestModel'
+        bestTree = expand(join(OUTDIR_INTER, '{prefix}_msa.raxml.bestTree'), prefix=PREFIX),
+        bestTree_collapse = expand(join(OUTDIR_INTER, '{prefix}_msa.raxml.bestTreeCollapsed'), prefix=PREFIX),
+        trees = expand(join(OUTDIR_INTER, '{prefix}_msa.raxml.mlTrees'), prefix=PREFIX),
+        model = expand(join(OUTDIR_INTER, '{prefix}_msa.raxml.bestModel'), prefix=PREFIX)
     shell:
         'raxml-ng --msa {input.fasta} --msa-format FASTA --model GTR+G '
-        '--prefix vn_msa --threads 4 --seed 667'
+        '--prefix {OUTDIR_INTER}/{PREFIX}_msa --threads {THREADS} --seed 667'
 
 # Visualize the RAxML trees using ETE
 # Output:
 #   - PNG files for each phylogenetic tree
 rule visualize_trees:
     input:
-        genome_tree = 'vn_msa.raxml.bestTree',
-        spike_tree = 'vn_spikeprot.raxml.bestTree'
+        genome_tree = expand(join(OUTDIR_INTER, '{prefix}_msa.raxml.bestTree'), prefix=PREFIX),
+        spike_tree = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.raxml.bestTree'), prefix=PREFIX)
     output:
-        genome_png = 'vn_msa_tree.png',
-        spike_png = 'vn_spikeprot_tree.png'
+        genome_png = expand(join(OUTDIR, '{prefix}_msa_tree.png'), prefix=PREFIX),
+        spike_png = expand(join(OUTDIR, '{prefix}_spikeprot_tree.png'), prefix=PREFIX)
     shell:
         'ete3 view -i {output.genome_png} -t {input.genome_tree} -m c; '
         'ete3 view -i {output.spike_png} -t {input.spike_tree} -m c'
@@ -159,10 +170,10 @@ rule visualize_trees:
 #   - text file with metrics for comparison
 rule compare_trees:
     input:
-        genome_tree = 'vn_msa.raxml.bestTree',
-        spike_tree = 'vn_spikeprot.raxml.bestTree'
+        genome_tree = expand(join(OUTDIR_INTER, '{prefix}_msa.raxml.bestTree'), prefix=PREFIX),
+        spike_tree = expand(join(OUTDIR_INTER, '{prefix}_spikeprot.raxml.bestTree'), prefix=PREFIX)
     output:
-        txt = 'vn_trees_comparison.txt'
+        txt = expand(join(OUTDIR, '{prefix}_trees_comparison.txt'), prefix=PREFIX)
     shell:
         'ete3 compare -t {input.spike_tree} -r {input.genome_tree} --unrooted | '
         'cut -f 3-10 -d "|" >> {output.txt}'
