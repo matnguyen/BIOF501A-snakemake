@@ -33,7 +33,7 @@ This will install all the required dependencies. Activate the environment by run
 ### Running the workflow
 The snakemake pipeline can be run using:
 
-`snakemake -s analysis.smk --cores 1`
+`snakemake --cores 1`
 
 ### Steps of the workflow
 #### decompress_data
