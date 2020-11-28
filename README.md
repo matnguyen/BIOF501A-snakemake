@@ -110,3 +110,5 @@ Here we see the output of the text file containing the quantitative measures for
 * `ref_br+`: frequency of edges in the reference tree found in target
 * `subtre+`: number of subtrees used for the comparison
 * `treekoD`: average distance among all possible subtrees in the original target trees to the reference tree
+
+The Robinson-Foulds symmetric distance is a metric for measuring the difference between two trees. In simple terms, it measures the number of clades not shared between the two trees. It is easier to interpret the normalized Robinson-Foulds distance, which represents the percentage of false or missing splits in the target tree compared to the reference tree. Here we see an `nRF` of `0.96`, meaning 96% of the splits in the spike protein tree are false or missing in the genome sequence tree. This means that the two trees are quite dissimilar, and thus we can quantitatively _and_ qualitatively say that the spike protein sequence across SARS-CoV-2 isolates found in Vietnam is highly conserved despite the genetic diversity observed in their genome sequence. 
