@@ -1,3 +1,6 @@
 filter:
   country: Vietnam
   prefix: vn
+
+output:
+  dir: 'output'

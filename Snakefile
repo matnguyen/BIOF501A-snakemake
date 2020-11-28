@@ -98,13 +98,13 @@ rule run_mafft_spike:
 #   - fasta files with corrected headers
 rule rename_fasta_headers:
     input:
-        genome_fasta = expand('{prefix}_msa.fasta', prefix=PREFIX)
+        genome_fasta = expand('{prefix}_msa.fasta', prefix=PREFIX),
         spike_fasta = expand('{prefix}_spikeprot.fasta', prefix=PREFIX)
     output:
         genome_fasta = expand('{prefix}_msa_fixed.fasta', prefix=PREFIX),
         spike_fasta = expand('{prefix}_spikeprot_fixed.fasta', prefix=PREFIX)
     shell:
-        'sed "s/.*V{COUNTRY}\/\(.*\)\/2020.*/>\\1/" {input.genome_fasta} >> {output.genome_fasta}; '
+        'sed "s/.*{COUNTRY}\/\(.*\)\/2020.*/>\\1/" {input.genome_fasta} >> {output.genome_fasta}; '
         'sed "s/.*{COUNTRY}\/\(.*\)\/2020.*/>\\1/" {input.spike_fasta} >> {output.spike_fasta}'
 
 # Runs RAxML for the spike protein alignment file to produce a 
