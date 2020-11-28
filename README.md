@@ -1,4 +1,5 @@
-# Standard Operating Procedure
+# SARS-CoV-2 Genome and Spike Protein Phylogenetic Comparison Pipeline - Standard Operating Procedure
+## Matthew Nguyen
 ## Background and Rationale
 
 ### Dependencies
