@@ -28,7 +28,7 @@ rule decompress_data:
         spike_fasta = 'data/spikeprot1119.fasta',
         genome_fasta = 'data/msa_1119.fasta'
     shell:
-        'tar -xf {input.genome}; unxz {input.spike}'
+        'tar -xf {input.genome} -C data; unxz {input.spike}'
 
 # Obtain list of all British Columbia isolates with genomes, and all isolates
 # with apike protein sequences
