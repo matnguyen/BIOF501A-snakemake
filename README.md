@@ -1,9 +1,9 @@
 # SARS-CoV-2 Genome and Spike Protein Phylogenetic Comparison Pipeline - Standard Operating Procedure
 ## Matthew Nguyen
 ## Background and Rationale
-The novel coronavirus disease 2019 (COVID-19) is a newly emerged infectious disease, currently spreading across the world. This disease is caused by a coronavirus named severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2). Undergoing vaccine efforts focus on determining ideal targets for neutralizing antibodies. The SARS-CoV-2 spike glycoprotein plays a key role in the receptor recognition and cell membrane fusion process ([Huang, 2020](https://www.nature.com/articles/s41401-020-0485-4#Sec1)). A large number of glycosylated spike protein covers the surface of the virus and binds to host cell receptor angiotensin-converting enzyme 2, mediating viral cell entry ([Letko, 2020](https://www.nature.com/articles/s41564-020-0688-y). Once the virus is inside the cell, the viral RNA is released, replicated, and released from the host cell. Therefore, the spike protein is an important target for COVID-19 vaccine and drug research.
+The novel coronavirus disease 2019 (COVID-19) is a newly emerged infectious disease, currently spreading across the world. This disease is caused by a coronavirus named severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2). Undergoing vaccine efforts focus on determining ideal targets for neutralizing antibodies. The SARS-CoV-2 spike glycoprotein plays a key role in the receptor recognition and cell membrane fusion process ([Huang, 2020](https://www.nature.com/articles/s41401-020-0485-4#Sec1)). A large number of glycosylated spike protein covers the surface of the virus and binds to host cell receptor angiotensin-converting enzyme 2, mediating viral cell entry ([Letko, 2020](https://www.nature.com/articles/s41564-020-0688-y)). Once the virus is inside the cell, the viral RNA is released, replicated, and released from the host cell. Therefore, the spike protein is an important target for COVID-19 vaccine and drug research.
 
-In order for vaccines and drugs to effectively target a protein, it must be highly conserved despite genetic differences between different isolates. It has been observed in other human coronaviruses that the spike protein is highly conserved, but this must also be the case for SARS-CoV-2 in order to develop an effective vaccine. I hypothesize that even between genetically different genomes found in one country, the spike protein sequence remains highly conserved. In order to study this, I have developed a pipeline that compares the phylogeny of genome sequences against the phylogeny of spike protein sequences from isolates in a country or region. This is an important study to perform for different countries around the world, to ensure the spike protein is highly conserved across _all_ strains around the world, thus supporting that a vaccine targetting the protein would be highly effective. Here, I demonstrate the pipeline on SARS-CoV-2 samples from Vietnam, a smaller sample that would take less time to run. 
+In order for vaccines and drugs to effectively target a protein, it must be highly conserved despite genetic differences between different isolates. It has been observed in other human coronaviruses that the spike protein is highly conserved, but this must also be the case for SARS-CoV-2 in order to develop an effective vaccine. I hypothesize that even between genetically different genomes found in one country, the spike protein sequence remains highly conserved. In order to study this, I have developed a workflow that compares the phylogeny of genome sequences against the phylogeny of spike protein sequences from isolates in a country or region of interest. This is an important study to perform for different countries around the world, to ensure the spike protein is highly conserved across _all_ strains around the world, thus supporting that a vaccine targetting the protein would be highly effective. Here, I demonstrate the workflow on SARS-CoV-2 samples from Vietnam, a smaller sample that would take less time to run. The workflow can then be applied to regions of the world containing more isolates, or even on a worldwide scale analysis given enough computational power.
 
 The pipeline is implemented using `Snakemake` and consists of multiple steps:
 
@@ -14,7 +14,7 @@ The pipeline is implemented using `Snakemake` and consists of multiple steps:
 5. Visualizing the phylogenetic trees using `ete3 view`
 6. Quantitatively comparing the phylogenetic trees using `ete3 compare`
 
-The directed acyclic graph produced from `snakemake` is shown below.
+The directed acyclic graph produced from `Snakemake` is shown below.
 
 ### Directed Acyclic Graph for Workflow
 ![](images/dag.svg) 
@@ -24,13 +24,16 @@ The following dependencies are required, and defined in the environment YAML fil
 
 * Python (version 3.6.11)
 * Snakemake (version 5.28.0)
+* grep (version 3.4)
+* sed (version 4.4)
+* xz (version 5.2.5)
 * MAFFT (version 7.471)
 * RAxML-NG (version 1.0.1)
 * ETE 3 (version 3.1.2)
 
 
 ## Usage
-All datasets are provided in the Github repository, along with the Snakemake workflow and a YAML file for creating a conda environment. 
+All datasets are provided in the Github repository, along with the Snakemake workflow and a YAML file for creating a conda environment. There is also a config YAML which is used to change various parameters of the workflow.
 
 ### Installation
 First, clone this repository by running: 
@@ -49,6 +52,14 @@ This will install all the required dependencies. Activate the environment by run
 The snakemake pipeline can be run using:
 
 `snakemake --cores 1`
+
+In order to modify aspects of the workflow, various parameters can be modified in `config.yaml`. These parameters are:
+
+| Parameter |              Description             |
+|:---------:|:------------------------------------:|
+| `country` |         Country to filter for        |
+|  `prefix` |    Prefix for various output files   |
+| `threads` | The maximum number of threads to use |
 
 ### Steps of the workflow
 #### decompress_data
@@ -91,11 +102,15 @@ This step just ensures all the correct output files are generated.
 ## Input
 `config.yaml` is a configuration file passed in to the Snakemake workflow. Here we define a filter country, a prefix for the filenames, an output directory and the number of threads. For this example, our filter country is `Vietnam`, our prefix is `vn`, our output directory is `./outputs` and we define `4` threads. These settings can be changed to fit the user's goal and computational resources. 
 
-The main input for the workflow are two FASTA files: one containing the multiple sequence alignment of 184,718 SARS-CoV-2 genomes from around the world, and one containing 196,674 SARS-CoV-2 spike protein sequences from around the world. These FASTA files will then be preprocessed in order to obtain paired genome and spike protein sequences of isolates from a country or location determined by the configuration file. Both FASTA files are single-line formatted, whereby the first line starting with the `>` character contains the metadata of the isolate, and the second line containing the entire genome or protein sequence. The metadata field contains multiple fields separated by the `|` character: the protein name (if applicable), the virus name/collection location/isolate ID/collection year, the accesion ID, the collection date, and the collection location. There may also be other metadata fields such as the collection institution or the name of the submitter.   
+The main input for the workflow are two FASTA files: one containing the multiple sequence alignment of 184,718 SARS-CoV-2 genomes from around the world, and one containing 196,674 SARS-CoV-2 spike protein sequences from around the world. These FASTA files will then be preprocessed in order to obtain paired genome and spike protein sequences of isolates from a country or location determined by the configuration file. Both FASTA files are single-line formatted, whereby the first line starting with the `>` character contains the metadata of the isolate, and the second line containing the entire genome (DNA) or protein sequence. The metadata field contains multiple fields separated by the `|` character: the protein name (if applicable), the virus name/collection location/isolate ID/collection year, the accesion ID, the collection date, and the collection location. There may also be other metadata fields such as the collection institution or the name of the submitter. An example of a FASTA header is presented below:
+
+`>Spike|hCoV-19/Vietnam/VNHN_0554/2020|2020-03-11|EPI_ISL_511892|Original|hCoV-19^^Hanoi|Human|National Hospital of Tropical Diseases|Oxford University Clinical Research Unit|Tam Thi Nguyen|Vietnam`
+
+A complete list of the IDs used for this example is available in `expected_outputs/intermediate_files/vn_paired_ids.txt`. 
 
 ## Output
 ### Overview
-By default, this workflow will create a directory `outputs` to hold the output files (asides from the initial decompressed data). This directory can be change in `config.yaml`. The three main final outputs are a phylogenetic tree for the genome sequences, a phylogenetic tree for the spike protein sequences, and a text file quantitatively comparing the two phylogenetic trees. `outputs/intermediate_files` contains other intermediate files generated by the workflow. An overview all generated files are presented below. `PREFIX` refers to the prefix defined in `config.yaml`, and most output files are paired for the genome sequences and the spike protein sequences, thus `{msa/spikeprot}` indicates a pair of files. 
+By default, this workflow will create a directory `outputs` to hold the output files (asides from the initial decompressed data). This directory can be change in `config.yaml`. The three main final outputs are a phylogenetic tree for the genome sequences, a phylogenetic tree for the spike protein sequences, and a text file quantitatively comparing the two phylogenetic trees. `outputs/intermediate_files` contains other intermediate files generated by the workflow. An overview of all generated files are presented below. `PREFIX` refers to the prefix defined in `config.yaml`, and most output files are paired for the genome sequences and the spike protein sequences, thus `{msa/spikeprot}` indicates a pair of files. 
 
 |                      File Name                      |                                             Description                                            |
 |:---------------------------------------------------:|:--------------------------------------------------------------------------------------------------:|
@@ -136,7 +151,7 @@ Qualitatively comparing the two phylogenetic trees, we can see that the two tree
  
 Here we see the output of the text file containing the quantitative measures for phylogenetic tree difference between the tree generated by genome sequences and the tree generated by spike protein sequences. We arbitrarily define the target tree as the spike protein tree, and the reference tree as the genome sequence tree. The columns of the text file are:
 
-* `E.size`: the number of isolates in the phylogenetic tree
+* `E.size`: the number of isolates present in both phylogenetic trees
 * `nRF`: normalized Robinson-Foulds distance (RF/maxRF)
 * `RF`: Robinson-Foulds symmetric distance
 * `maxRF`: maximum Robinson-Foulds value for this comparison
